@@ -1,0 +1,131 @@
+name: exameo
+
+# =============================================================================
+# Exameo - Stack observabilité (dev local)
+# Prometheus, Grafana 11, Loki, Tempo, OpenTelemetry Collector.
+# Lancer combiné :
+#   docker compose -f infra/docker-compose.yml -f infra/docker-compose.observability.yml up -d
+# =============================================================================
+
+x-default-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  # ---------------------------------------------------------------------------
+  # OpenTelemetry Collector : reçoit OTLP (gRPC 4317 / HTTP 4318), redistribue
+  # vers Prometheus (metrics scrape), Loki (logs) et Tempo (traces).
+  # ---------------------------------------------------------------------------
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.110.0
+    container_name: exameo-otel-collector
+    restart: unless-stopped
+    command: ["--config=/etc/otel-collector.yaml"]
+    volumes:
+      - ./otel-collector/otel-collector.yaml:/etc/otel-collector.yaml:ro
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+      - "8889:8889"   # Prometheus exporter (scraped by Prometheus)
+    depends_on:
+      - tempo
+      - loki
+    logging: *default-logging
+    networks:
+      - exameo
+
+  # ---------------------------------------------------------------------------
+  # Prometheus : metrics scraping
+  # ---------------------------------------------------------------------------
+  prometheus:
+    image: prom/prometheus:v3.0.0
+    container_name: exameo-prometheus
+    restart: unless-stopped
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=7d"
+      - "--web.enable-lifecycle"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    logging: *default-logging
+    networks:
+      - exameo
+
+  # ---------------------------------------------------------------------------
+  # Loki : logs aggregation
+  # ---------------------------------------------------------------------------
+  loki:
+    image: grafana/loki:3.3.0
+    container_name: exameo-loki
+    restart: unless-stopped
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./loki/loki-config.yaml:/etc/loki/local-config.yaml:ro
+      - loki-data:/loki
+    ports:
+      - "3100:3100"
+    logging: *default-logging
+    networks:
+      - exameo
+
+  # ---------------------------------------------------------------------------
+  # Tempo : distributed tracing
+  # ---------------------------------------------------------------------------
+  tempo:
+    image: grafana/tempo:2.6.0
+    container_name: exameo-tempo
+    restart: unless-stopped
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./tempo/tempo.yaml:/etc/tempo.yaml:ro
+      - tempo-data:/var/tempo
+    ports:
+      - "3200:3200"   # Tempo UI/API
+      - "4327:4317"   # OTLP gRPC (séparé du collector pour direct push)
+    logging: *default-logging
+    networks:
+      - exameo
+
+  # ---------------------------------------------------------------------------
+  # Grafana 11 : dashboards et exploration
+  # ---------------------------------------------------------------------------
+  grafana:
+    image: grafana/grafana-oss:11.4.0
+    container_name: exameo-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_FEATURE_TOGGLES_ENABLE: "traceqlEditor"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus
+      - loki
+      - tempo
+    logging: *default-logging
+    networks:
+      - exameo
+
+# =============================================================================
+volumes:
+  prometheus-data:
+  loki-data:
+  tempo-data:
+  grafana-data:
+
+networks:
+  exameo:
+    name: exameo
+    external: true

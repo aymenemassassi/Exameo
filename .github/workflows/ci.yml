@@ -1,0 +1,150 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Backend Java : api-gateway, user-service (Gradle multi-projets)
+  # ---------------------------------------------------------------------------
+  backend-java:
+    name: Backend Java (Gradle ${{ matrix.module }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module: [api-gateway, user-service]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: wrapper
+
+      - name: Compile
+        run: ./gradlew :services:${{ matrix.module }}:compileJava --no-daemon
+
+      - name: Test
+        run: ./gradlew :services:${{ matrix.module }}:test --no-daemon
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.module }}
+          path: services/${{ matrix.module }}/build/test-results/test
+
+  # ---------------------------------------------------------------------------
+  # Frontend Next.js
+  # ---------------------------------------------------------------------------
+  frontend-web:
+    name: Frontend (Next.js)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install
+        run: npm ci || npm install
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npm run type-check
+
+      - name: Build
+        env:
+          NEXTAUTH_SECRET: ci-build-secret-please-change-me
+          NEXTAUTH_URL: http://localhost:3000
+          KEYCLOAK_CLIENT_ID: web
+          KEYCLOAK_CLIENT_SECRET: web-secret
+          KEYCLOAK_ISSUER: http://localhost:8081/realms/exameo
+          AUTH_TRUST_HOST: "true"
+        run: npm run build
+
+  # ---------------------------------------------------------------------------
+  # AI service Python (Sprint 1+, placeholder ici si dossier absent)
+  # ---------------------------------------------------------------------------
+  ai-service-python:
+    name: AI service (Python)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect ai-service
+        id: detect
+        run: |
+          if [ -d "services/ai-service" ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-python@v5
+        if: steps.detect.outputs.exists == 'true'
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install + test
+        if: steps.detect.outputs.exists == 'true'
+        working-directory: services/ai-service
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .[dev]
+          pytest -q
+
+  # ---------------------------------------------------------------------------
+  # Trivy : scan vulnérabilités sur l'arborescence
+  # ---------------------------------------------------------------------------
+  security-trivy:
+    name: Trivy filesystem scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Trivy
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: sarif
+          output: trivy-results.sarif
+          severity: CRITICAL,HIGH
+          exit-code: "0"
+
+      - name: Upload SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
+          category: trivy

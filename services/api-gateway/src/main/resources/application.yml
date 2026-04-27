@@ -1,0 +1,93 @@
+server:
+  port: 8080
+  shutdown: graceful
+
+spring:
+  application:
+    name: api-gateway
+  threads:
+    virtual:
+      enabled: true
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER:http://localhost:8081/realms/exameo}
+          jwk-set-uri: ${KEYCLOAK_ISSUER:http://localhost:8081/realms/exameo}/protocol/openid-connect/certs
+  cloud:
+    gateway:
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+        - TokenRelay=
+      routes:
+        - id: user-service
+          uri: ${USER_SERVICE_URI:http://localhost:8082}
+          predicates:
+            - Path=/api/users/**,/api/me
+          filters:
+            - StripPrefix=1
+            - name: Retry
+              args:
+                retries: 2
+                series: SERVER_ERROR
+        - id: exam-service
+          uri: ${EXAM_SERVICE_URI:http://localhost:8083}
+          predicates:
+            - Path=/api/exams/**,/api/questions/**,/api/sessions/**
+          filters:
+            - StripPrefix=1
+        - id: grading-service
+          uri: ${GRADING_SERVICE_URI:http://localhost:8084}
+          predicates:
+            - Path=/api/grades/**
+          filters:
+            - StripPrefix=1
+        - id: notification-service
+          uri: ${NOTIFICATION_SERVICE_URI:http://localhost:8085}
+          predicates:
+            - Path=/api/notifications/**
+          filters:
+            - StripPrefix=1
+        - id: ai-service
+          uri: ${AI_SERVICE_URI:http://localhost:8086}
+          predicates:
+            - Path=/api/ai/**
+          filters:
+            - StripPrefix=1
+        - id: proctoring-service
+          uri: ${PROCTORING_SERVICE_URI:http://localhost:8087}
+          predicates:
+            - Path=/api/proctoring/**
+          filters:
+            - StripPrefix=1
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics,gateway
+  endpoint:
+    health:
+      show-details: when_authorized
+    prometheus:
+      access: read_only
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4317}/v1/traces
+    metrics:
+      export:
+        url: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4317}/v1/metrics
+
+logging:
+  level:
+    root: INFO
+    org.springframework.cloud.gateway: INFO
+    org.springframework.security: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [trace=%X{traceId:-},span=%X{spanId:-}] %logger{40} - %msg%n"

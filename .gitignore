@@ -1,0 +1,81 @@
+# --- OS / Editors ----------------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+*.iml
+.history/
+*.code-workspace
+
+# --- Java / Gradle / Maven -------------------------------------------------
+**/build/
+**/target/
+**/.gradle/
+**/out/
+**/bin/
+*.class
+*.log
+hs_err_pid*
+replay_pid*
+.gradle/
+gradle-app.setting
+**/*.hprof
+
+# --- Node / Next.js --------------------------------------------------------
+node_modules/
+.next/
+.turbo/
+.cache/
+.parcel-cache/
+.eslintcache
+*.tsbuildinfo
+coverage/
+playwright-report/
+playwright/.cache/
+test-results/
+
+# --- Python ----------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# --- Docker / Compose ------------------------------------------------------
+.docker/
+**/data/
+infra/.local-data/
+
+# --- Secrets / Env ---------------------------------------------------------
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.production.local
+*.pem
+*.key
+*.crt
+
+# --- Build artifacts -------------------------------------------------------
+dist/
+*.war
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+!**/gradle-wrapper.jar
+
+# --- Logs ------------------------------------------------------------------
+logs/
+*.log
+
+# --- Local overrides -------------------------------------------------------
+docker-compose.override.yml
+gradle-local.properties

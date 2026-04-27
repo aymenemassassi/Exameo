@@ -1,0 +1,191 @@
+{
+  "id": "exameo",
+  "realm": "exameo",
+  "displayName": "Exameo",
+  "displayNameHtml": "<strong>Exameo</strong> - Plateforme d'examens",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "permanentLockout": false,
+  "maxFailureWaitSeconds": 900,
+  "minimumQuickLoginWaitSeconds": 60,
+  "waitIncrementSeconds": 60,
+  "quickLoginCheckMilliSeconds": 1000,
+  "maxDeltaTimeSeconds": 43200,
+  "failureFactor": 5,
+  "defaultSignatureAlgorithm": "RS256",
+  "accessTokenLifespan": 900,
+  "accessTokenLifespanForImplicitFlow": 900,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 36000,
+  "offlineSessionIdleTimeout": 2592000,
+  "accessCodeLifespan": 60,
+  "accessCodeLifespanUserAction": 300,
+  "accessCodeLifespanLogin": 1800,
+  "actionTokenGeneratedByAdminLifespan": 43200,
+  "actionTokenGeneratedByUserLifespan": 300,
+  "internationalizationEnabled": true,
+  "supportedLocales": ["fr", "en", "ar"],
+  "defaultLocale": "fr",
+  "passwordPolicy": "length(4)",
+  "otpPolicyType": "totp",
+  "otpPolicyAlgorithm": "HmacSHA1",
+  "otpPolicyDigits": 6,
+  "otpPolicyLookAheadWindow": 1,
+  "otpPolicyPeriod": 30,
+
+  "roles": {
+    "realm": [
+      {"name": "student", "description": "Etudiant : passe des examens, voit ses notes."},
+      {"name": "teacher", "description": "Enseignant : crée et corrige des examens."},
+      {"name": "proctor", "description": "Surveillant : supervise les sessions live."},
+      {"name": "admin", "description": "Administrateur : gère utilisateurs, cohortes, audit."}
+    ]
+  },
+
+  "groups": [
+    {"name": "students"},
+    {"name": "teachers"},
+    {"name": "proctors"},
+    {"name": "admins"}
+  ],
+
+  "defaultRoles": ["offline_access", "uma_authorization"],
+  "requiredCredentials": ["password"],
+
+  "scopeMappings": [],
+
+  "clients": [
+    {
+      "clientId": "web",
+      "name": "Exameo Web (Next.js)",
+      "description": "Frontend public, OIDC code flow + PKCE",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "web-secret",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "rootUrl": "http://localhost:3000",
+      "baseUrl": "http://localhost:3000",
+      "redirectUris": [
+        "http://localhost:3000/*",
+        "http://localhost:3000/api/auth/callback/keycloak"
+      ],
+      "webOrigins": ["http://localhost:3000", "+"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:3000/*"
+      },
+      "fullScopeAllowed": true,
+      "defaultClientScopes": [
+        "web-origins",
+        "profile",
+        "roles",
+        "email",
+        "acr"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access",
+        "microprofile-jwt"
+      ],
+      "protocolMappers": [
+        {
+          "name": "realm roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "userinfo.token.claim": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "realm_access.roles",
+            "jsonType.label": "String",
+            "multivalued": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "api-gateway",
+      "name": "Exameo API Gateway",
+      "description": "Resource server, valide les tokens",
+      "enabled": true,
+      "publicClient": false,
+      "bearerOnly": true,
+      "secret": "gateway-secret",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "fullScopeAllowed": true,
+      "defaultClientScopes": ["roles", "profile", "email"]
+    }
+  ],
+
+  "users": [
+    {
+      "username": "student",
+      "email": "student@exameo.local",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Aline",
+      "lastName": "Étudiante",
+      "credentials": [
+        {"type": "password", "value": "student", "temporary": false}
+      ],
+      "realmRoles": ["student"],
+      "groups": ["/students"],
+      "attributes": {"locale": ["fr"]}
+    },
+    {
+      "username": "teacher",
+      "email": "teacher@exameo.local",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Bruno",
+      "lastName": "Enseignant",
+      "credentials": [
+        {"type": "password", "value": "teacher", "temporary": false}
+      ],
+      "realmRoles": ["teacher"],
+      "groups": ["/teachers"],
+      "attributes": {"locale": ["fr"]}
+    },
+    {
+      "username": "proctor",
+      "email": "proctor@exameo.local",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Claire",
+      "lastName": "Surveillante",
+      "credentials": [
+        {"type": "password", "value": "proctor", "temporary": false}
+      ],
+      "realmRoles": ["proctor"],
+      "groups": ["/proctors"],
+      "attributes": {"locale": ["fr"]}
+    },
+    {
+      "username": "admin",
+      "email": "admin@exameo.local",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Diane",
+      "lastName": "Administratrice",
+      "credentials": [
+        {"type": "password", "value": "admin", "temporary": false}
+      ],
+      "realmRoles": ["admin"],
+      "groups": ["/admins"],
+      "attributes": {"locale": ["fr"]}
+    }
+  ]
+}
