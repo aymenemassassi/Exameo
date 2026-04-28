@@ -22,7 +22,7 @@ dependencies {
 
     implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
 
-    runtimeOnly("org.postgresql:postgresql:42.7.4")
+    runtimeOnly("org.postgresql:postgresql:42.7.10")
     implementation("org.flywaydb:flyway-core")
     implementation("org.flywaydb:flyway-database-postgresql")
 
