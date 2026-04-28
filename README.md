@@ -26,6 +26,17 @@ Comptes seed Keycloak : `student / student`, `teacher / teacher`, `proctor / pro
 - Mettre en oeuvre les **bonnes pratiques de l'industrie** (DDD, Hexagonal, OpenAPI 3.1, RFC 9457, OWASP, observabilité OpenTelemetry, IaC, CI/CD, ADRs)
 - Servir de **vitrine technique** : code lisible, README didactique, ADRs, diagrammes C4, dashboards Grafana, traces Tempo, tests Testcontainers/Playwright
 
+## Apprendre la stack ([`docs/learn/`](./docs/learn/))
+
+Exameo n'est pas qu'un projet livrable, c'est aussi une **vitrine pédagogique**. Le dossier [`docs/learn/`](./docs/learn/) contient un **livre de cours-tutoriels** écrits pour quelqu'un qui découvre les technologies (Docker, Spring Boot, Keycloak/OIDC, Next.js 15, Kafka, observabilité OpenTelemetry...).
+
+- 10 cours rétroactifs sur l'existant — voir [carte de progression](./docs/learn/README.md)
+- Glossaire transverse de 70+ termes — voir [`00-vocabulaire.md`](./docs/learn/00-vocabulaire.md)
+- Sessions de développement guidé pour les nouvelles features — voir [`sessions/`](./docs/learn/sessions/)
+- Mode d'emploi du dispositif — voir [`HOW-TO-USE.md`](./docs/learn/HOW-TO-USE.md)
+
+Branche d'expérimentation : `learn/sandbox` (fork sécurisé de `main` pour les exercices).
+
 ## Fonctionnalités cibles
 
 | Domaine | Détails |
@@ -37,7 +48,7 @@ Comptes seed Keycloak : `student / student`, `teacher / teacher`, `proctor / pro
 | Anti-triche IA | Webcam check, tab switch, fullscreen lock, similarity n-gram, score de confiance |
 | Correction | Auto QCM/v-f, semi-auto ouverte (mots-clés + LLM), manuelle, regrade workflow |
 | Analytics | Dashboards prof/élève/admin (distribution, item analysis, percentile, KPIs cohortes) |
-| Notifications | Email (MailHog dev / SMTP prod), in-app, ICS calendar |
+| Notifications | Email (Mailpit dev / SMTP prod), in-app, ICS calendar |
 | IA générative | Upload cours -> set de QCM proposé (FastAPI + LangChain, mode BYOK) |
 | Export/Import | PDF sujets/corrigés/bulletins, CSV/XLSX notes, QTI 2.1, Moodle XML |
 
@@ -69,7 +80,7 @@ Diagrammes complets : voir [`docs/architecture.md`](./docs/architecture.md). Dé
 - **AI** : FastAPI 0.115, Pydantic v2, LangChain, mode BYOK (Ollama local par défaut, OpenAI ou Anthropic optionnels)
 - **Realtime** : Node.js 22, Fastify, Socket.IO, Zod
 - **Identity** : Keycloak 26 (realm `exameo` provisioned)
-- **Données** : PostgreSQL 17 (DB-per-service), Valkey 8 (BSD, fork open-source pur de Redis), Kafka KRaft, MinIO
+- **Données** : PostgreSQL 17 (DB-per-service), Valkey 9 (BSD, fork open-source pur de Redis), Kafka 4.0 KRaft, MinIO
 - **Observabilité** : Prometheus, Grafana 11, Loki, Tempo, OpenTelemetry Collector
 - **CI/CD** : GitHub Actions (matrix Java/Node/Python, lint, tests, scan Trivy)
 
@@ -137,10 +148,10 @@ npm run dev
 |---|---|
 | Frontend Next.js | http://localhost:3000 |
 | API Gateway | http://localhost:8080 |
-| Keycloak | http://localhost:8081 (admin / admin) |
+| Keycloak | http://localhost:8081 (admin / Admin123!) |
 | Grafana | http://localhost:3001 (admin / admin) |
 | Prometheus | http://localhost:9090 |
-| MailHog | http://localhost:8025 |
+| Mailpit | http://localhost:8025 |
 | MinIO console | http://localhost:9001 (minio / minio12345) |
 
 ## Tests
