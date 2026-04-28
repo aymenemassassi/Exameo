@@ -55,6 +55,34 @@ Convention : **Terme français** *(English term)* — définition simple, suivie
 
 - **Image registry** *(container registry)* — Dépôt d'images publiques ou privées. Le plus connu : Docker Hub. Quand tu écris `image: postgres:17`, Docker va la chercher là-bas.
 
+- **Layer** *(image layer)* — Une image Docker est une **pile de couches** immuables empilées. Chaque instruction d'un Dockerfile crée 1 layer. Les layers sont **partagées** entre images (économie d'espace) et **mises en cache** au build.
+
+- **Tag** *(image tag)* — Étiquette de version sur une image (`postgres:17-alpine` = nom + tag). Pinner un tag précis (vs `:latest`) évite les surprises de mise à jour. Chez Exameo : tous les tags sont pinnés.
+
+- **Bind mount** — Montage qui expose un **dossier de l'hôte** dans le container (ex : `./postgres/init:/docker-entrypoint-initdb.d:ro`). Pratique en dev pour partager des fichiers de conf ou de code.
+
+- **Named volume** — Volume géré par Docker (stocké dans `/var/lib/docker/volumes/...`), avec un nom logique (`postgres-data`). Préféré aux bind mounts pour les **données persistantes**.
+
+- **Port mapping** *(port publishing)* — Expose un port du container sur l'hôte (`HOST:CONTAINER` dans `ports:`). Sans port mapping, le service n'est joignable que depuis le réseau Docker.
+
+- **Compose project name** — Préfixe appliqué à tous les containers/volumes/networks. Chez Exameo : `name: exameo` en haut du compose, donc `exameo-postgres`, `exameo-kafka`...
+
+- **`depends_on` + condition** — Dépendance d'ordre de démarrage entre services Compose. Avec `condition: service_healthy`, Compose attend que le healthcheck passe avant de lancer le suivant.
+
+- **`restart: unless-stopped`** — Politique de redémarrage Docker : relance le container s'il crash ou si la machine reboot, sauf si tu l'as explicitement arrêté.
+
+- **Init container** — Container "jetable" qui fait un setup une fois puis sort proprement. Exemple Exameo : `minio-init` qui crée les buckets MinIO au démarrage.
+
+- **YAML anchor** *(`&` et `*`)* — Syntaxe YAML pour réutiliser un bloc (`&default-logging` puis `*default-logging`). Évite la duplication. Pas spécifique Docker, universel YAML.
+
+- **Dockerfile** — Recette texte pour **construire** une image custom (`FROM`, `RUN`, `COPY`, `CMD`...). Exameo n'en a pas encore (utilise des images pré-construites), arrivera au Sprint 1.
+
+- **Docker Desktop** — Application Windows/Mac qui packagee Docker Engine + WSL2 + UI. C'est ce que tu lances avant `docker compose up`.
+
+- **WSL2** *(Windows Subsystem for Linux 2)* — Mini-Linux dans Windows. Docker Desktop l'utilise pour faire tourner les containers (qui sont fondamentalement des process Linux).
+
+- **`docker exec`** — Lance une commande dans un container **déjà en route** (`docker exec -it exameo-postgres psql -U exameo`). Indispensable pour debug.
+
 ## Backend Java / Spring
 
 - **JVM** *(Java Virtual Machine)* — La machine virtuelle qui exécute le bytecode Java. Permet "write once, run anywhere".

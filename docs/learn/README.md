@@ -23,7 +23,7 @@ Les 10 cours rétroactifs couvrent l'existant d'Exameo, dans un ordre conçu pou
 
 | # | Cours | Statut | Pré-requis |
 |---|---|---|---|
-| 01 | [Docker & Docker Compose](./01-docker.md) | À écrire | Aucun |
+| 01 | [Docker & Docker Compose](./01-docker.md) | Disponible | Aucun |
 | 02 | [Spring Boot 3 moderne (vs Java EE)](./02-spring-boot.md) | À écrire | Notions Java |
 | 03 | [PostgreSQL + Flyway (migrations versionnées)](./03-postgres-flyway.md) | À écrire | 02 |
 | 04 | [Keycloak + OIDC + JWT](./04-keycloak-oidc.md) | À écrire | 01 |
@@ -34,7 +34,7 @@ Les 10 cours rétroactifs couvrent l'existant d'Exameo, dans un ordre conçu pou
 | 09 | [Observabilité OTel/Prometheus/Grafana/Loki/Tempo](./09-observabilite-otel.md) | À écrire | 01 |
 | 10 | [Gradle Kotlin DSL multi-module](./10-gradle-multimodule.md) | À écrire | 02 |
 
-**Progression : 0 / 10**
+**Progression : 1 / 10**
 
 Chaque cours est conçu pour une session de **30 à 60 minutes** : lecture + mini-exercice sur la branche `learn/sandbox`. Tu peux les enchaîner ou en faire un par jour, l'important c'est de cocher.
 
