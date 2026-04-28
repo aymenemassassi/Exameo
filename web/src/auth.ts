@@ -1,35 +1,15 @@
-import NextAuth, { type DefaultSession } from "next-auth";
+import NextAuth from "next-auth";
 import Keycloak from "next-auth/providers/keycloak";
 
-declare module "next-auth" {
-  interface Session {
-    accessToken?: string;
-    error?: string;
-    user: {
-      roles?: string[];
-    } & DefaultSession["user"];
-  }
-}
-
-declare module "@auth/core/jwt" {
-  interface JWT {
-    accessToken?: string;
-    refreshToken?: string;
-    expiresAt?: number;
-    roles?: string[];
-    error?: string;
-  }
-}
-
-async function refreshAccessToken(token: {
-  refreshToken?: string;
-  expiresAt?: number;
-}): Promise<{
+type ExameoToken = {
   accessToken?: string;
   refreshToken?: string;
   expiresAt?: number;
+  roles?: string[];
   error?: string;
-}> {
+};
+
+async function refreshAccessToken(token: ExameoToken): Promise<ExameoToken> {
   try {
     const params = new URLSearchParams({
       client_id: process.env.KEYCLOAK_CLIENT_ID ?? "web",
@@ -71,33 +51,45 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   callbacks: {
     async jwt({ token, account, profile }) {
+      const t = token as ExameoToken & Record<string, unknown>;
+
       if (account) {
-        token.accessToken = account.access_token;
-        token.refreshToken = account.refresh_token;
-        token.expiresAt = account.expires_at;
+        t.accessToken = account.access_token;
+        t.refreshToken = account.refresh_token;
+        t.expiresAt = account.expires_at;
       }
 
-      if (profile && typeof (profile as { realm_access?: { roles?: string[] } }).realm_access === "object") {
-        token.roles = (profile as { realm_access?: { roles?: string[] } }).realm_access?.roles ?? [];
+      const realmAccess = (profile as { realm_access?: { roles?: string[] } } | undefined)?.realm_access;
+      if (realmAccess && Array.isArray(realmAccess.roles)) {
+        t.roles = realmAccess.roles;
       }
 
-      const stillValid = token.expiresAt && Date.now() / 1000 < token.expiresAt - 30;
+      const stillValid = typeof t.expiresAt === "number" && Date.now() / 1000 < t.expiresAt - 30;
       if (stillValid) {
-        return token;
+        return t;
       }
 
-      if (token.refreshToken) {
-        const refreshed = await refreshAccessToken(token);
-        return { ...token, ...refreshed };
+      if (t.refreshToken) {
+        const refreshed = await refreshAccessToken({
+          refreshToken: t.refreshToken,
+          expiresAt: t.expiresAt,
+        });
+        return { ...t, ...refreshed };
       }
 
-      return token;
+      return t;
     },
     async session({ session, token }) {
-      session.accessToken = token.accessToken;
-      session.error = token.error;
-      session.user.roles = token.roles ?? [];
-      return session;
+      const t = token as ExameoToken;
+      const s = session as typeof session & {
+        accessToken?: string;
+        error?: string;
+        user: typeof session.user & { roles?: string[] };
+      };
+      s.accessToken = t.accessToken;
+      s.error = t.error;
+      s.user.roles = t.roles ?? [];
+      return s;
     },
   },
   pages: {
